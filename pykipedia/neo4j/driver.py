@@ -53,6 +53,26 @@ class DriverUnitTesting(unittest.TestCase):
 		assert(self.driver.countNodes() == 4)
 		assert(self.driver.countRelationship() == 3)
 		assert(self.driver.countRelationshipBeetween("wiki.it/Pagina2", "wiki.it/Pagina") == 0)
+	
+	def test_queries(self):
+		self.driver.createNode(["wiki.it/Pagina","Pagina"])
+		self.driver.createNode(["wiki.it/Pagina2","Pagina2"])
+		self.driver.createNode(["wiki.it/Pagina3","Pagina3"])
+		self.driver.createNode(["wiki.it/Pagina4","Pagina4"])
+		self.driver.createEdge("wiki.it/Pagina", "wiki.it/Pagina2")
+		self.driver.createEdge("wiki.it/Pagina", "wiki.it/Pagina3")
+		self.driver.createEdge("wiki.it/Pagina2", "wiki.it/Pagina4")
+		
+		nodes = 0
+		for n in self.driver.getNodes():
+			nodes += 1
+		assert(self.driver.countNodes() == 4)
+		assert(nodes == 4)
+		edges = 0
+		for n in self.driver.getEdges():
+			edges += 1
+		assert(self.driver.countRelationship() == 3)
+		assert(edges == 3)
 
 class Driver:
 	
@@ -127,6 +147,11 @@ class Driver:
 		graph_db = self.__connect()		
 		query = neo4j.CypherQuery(graph_db, query_text)
 		return query.execute_one()
+	
+	def __iterateOverResult(self, query_text):
+		graph_db = self.__connect()		
+		query = neo4j.CypherQuery(graph_db, query_text)
+		return query.stream()
 		
 	def countNodes(self):
 		'''
@@ -165,7 +190,6 @@ class Driver:
 		Se il DB viene creato ex-novo e' definito anche lo schema e
 		gli indici.
 		'''
-
 		self.__initDB()
 		query_delete_rel = "MATCH ()-[l:{Label}]->() DELETE l;"
 		query_delete_nodes = "MATCH (n:{Label}) DELETE n;"
@@ -174,3 +198,11 @@ class Driver:
 		
 		self.__runQuery(query_delete_rel)
 		self.__runQuery(query_delete_nodes)
+	
+	def getNodes(self):
+		query_text = "MATCH (n:Page) RETURN Id(n) as Id, n.url, n.title;"
+		return self.__iterateOverResult(query_text)
+		
+	def getEdges(self):
+		query_text = "MATCH (sx:Page)-[l:LinkedTo]->(dx:Page) RETURN Id(l), Id(sx) as Id1, Id(dx) as Id2;"
+		return self.__iterateOverResult(query_text)
