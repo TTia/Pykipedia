@@ -7,21 +7,42 @@ import xml.etree.ElementTree as ET
 import xml.dom.minidom as MiniDOM
 import datetime
 import unittest
+from unittest.mock import Mock
 from pykipedia.neo4j.driver import Driver
 
 class DriverUnitTesting(unittest.TestCase):	
-	def setUp(self):
-		pass
 
-	def tearDown(self):
-		pass
+	def buildNeo4JMockDriver(self, N, M):
+		driver = Driver()
+		driver.getNodes = Mock(return_value = self.generateNodes(N))
+		driver.getEdges = Mock(return_value = self.generateEdges(M))
+		return driver
+			
+	def generateEdges(self, M):
+		'''
+		MATCH (sx:Page)-[l:LinkedTo]->(dx:Page) RETURN Id(l) as eId, Id(sx) as Id1, Id(dx) as Id2;
+		'''
+		i = 0		
+		while i<M:
+			yield {"eId" : i, "Id1" : i+1, "Id2": i+2}
+			i += 1
 		
-	def test_isDBEmpty(self):
-		pass
-
+	def generateNodes(self, N):
+		'''
+		MATCH (n:Page) RETURN Id(n) as Id, n.url, n.title;
+		'''
+		i = 0		
+		while i<N:
+			pagina = "Pagina%s" % str(i)
+			yield {"Id" : i, "url": "wiki.it/%s" % pagina, "title": pagina}
+			i += 1
+	
+	def validateGexfFile(self):
+		return False
+		
 class GexfGenerator:
 	
-	def generateGexfFile(self):
+	def generateGexfFile(self, driver):
 		'''
 		<gexf xmlns="http://www.gexf.net/1.2draft" version="1.2">
 		'''
@@ -33,17 +54,16 @@ class GexfGenerator:
 		splittedXml = self.__indent(root).split("###")
 		self.__writeToFile(splittedXml[0])
 		
-		db = Driver()
 		gexfFile = open("wikipedia.gexf","w+")
 
-		for node in db.getNodes():
-			gexfFile.write(self.__generateNode(node[0], node[1], node[2]))
+		for node in driver.getNodes():
+			gexfFile.write(self.__generateNode(node["Id"], node["url"], node["title"]))
 			
 		splittedXml = splittedXml[1].split("@@@")
 		gexfFile.write(splittedXml[0])
 		
-		for edge in db.getEdges():
-			gexfFile.write(self.__generateEdge(edge[0], edge[1], edge[2]))
+		for edge in driver.getEdges():
+			gexfFile.write(self.__generateEdge(edge["eId"], edge["Id1"], edge["Id2"]))
 		
 		gexfFile.write(splittedXml[1])
 		gexfFile.close()

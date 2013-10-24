@@ -204,5 +204,5 @@ class Driver:
 		return self.__iterateOverResult(query_text)
 		
 	def getEdges(self):
-		query_text = "MATCH (sx:Page)-[l:LinkedTo]->(dx:Page) RETURN Id(l), Id(sx) as Id1, Id(dx) as Id2;"
+		query_text = "MATCH (sx:Page)-[l:LinkedTo]->(dx:Page) RETURN Id(l) as eId, Id(sx) as Id1, Id(dx) as Id2;"
 		return self.__iterateOverResult(query_text)
