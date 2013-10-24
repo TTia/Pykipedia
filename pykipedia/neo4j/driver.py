@@ -5,6 +5,66 @@ Created on 17/ott/2013
 
 from py2neo import neo4j
 import unittest
+import datetime
+from random import randint
+
+class DriverStressTest(unittest.TestCase):
+
+	def setUp(self):
+		self.driver = Driver()
+		self.driver.resetDB()
+	
+	def tearDown(self):
+		self.driver.resetDB()
+		
+	'''
+	Stress Test - "Mocked" Crawler
+	(test_#Nodes_#Edges)
+	'''
+	def test_1k_1k(self):
+		self.__runStressTest(1000, 1000, "1k, 1k")		
+
+	#def test_10k_10k(self):
+	#	self.__runStressTest(10000, 10000, "10k, 10k")
+
+	#def test_100k_100k(self):
+	#	self.__runStressTest(100000, 100000, "100k, 100k")
+	
+	def __runStressTest(self, N, M, label = ""):
+		print(label)
+		startTime = datetime.datetime.now()
+		
+		for node in self.__generateNodes(N):
+			self.driver.createNode([node["url"], node["title"]])
+		
+		for edge in self.__generateEdges(M):
+			self.driver.createNode([edge["startUrl"], edge["endUrl"]])
+					
+		delta = (datetime.datetime.now()-startTime)
+		print(divmod(delta.days * 86400 + delta.seconds, 60))
+	
+	def __generateEdges(self, M):
+		edges = 0		
+		while edges<M:
+			startUrl = "wiki.it/Pagina%s" % str(randint(0, self.nodeCounter-1))
+			endUrl = "wiki.it/Pagina%s" % str(randint(0, self.nodeCounter-1))
+			
+			if edges % 250 == 0:
+				print("edges: "+str(edges))
+				
+			yield {"startUrl" : startUrl, "endUrl": endUrl}
+			edges += 1
+		
+	def __generateNodes(self, N):
+		self.nodeCounter = 0		
+		while self.nodeCounter<N:
+			pagina = "Pagina%s" % str(self.nodeCounter)
+			
+			if self.nodeCounter % 250 == 0:
+				print("nodes: "+str(self.nodeCounter))
+			
+			yield {"url": "wiki.it/%s" % pagina, "title": pagina}
+			self.nodeCounter += 1
 
 class DriverUnitTesting(unittest.TestCase):	
 	def setUp(self):
@@ -75,10 +135,9 @@ class DriverUnitTesting(unittest.TestCase):
 		assert(edges == 3)
 
 class Driver:
-	
-	def __connect(self):
-		return neo4j.GraphDatabaseService("http://localhost:7474/db/data/")
-	
+	def __init__(self):
+		self.db = neo4j.GraphDatabaseService("http://localhost:7474/db/data/") 
+
 	def __getNodeLabel(self):
 		return "Page"
 	
@@ -111,7 +170,9 @@ class Driver:
 		Crea un nuovo nodo sul db.
 		:param attributes: lista degli attributi di un singolo nodo. [url, titolo]
 		'''
+		
 		fields = self.__getNodeAttributes()
+		
 		query_text = "CREATE (p:{Label}{{ {Url}:'{UrlValue}', {Title}: '{TitleValue}' }});"
 		query_text =  query_text.format(Label = self.__getNodeLabel(),\
 									Url = fields[0], UrlValue = attributes[0],\
@@ -124,6 +185,7 @@ class Driver:
 		:param startURL: url della voce che contiene il link.
 		:param endURL: url della voce a cui il link si riferisce. 
 		'''
+		'''
 		query_text = ("MATCH (left:{LeftLabel}), (right:{RightLabel}) "
 					"WHERE left.{LeftAttr} = '{LeftValue}' and right.{RightAttr} = '{RightValue}' "
 					"CREATE UNIQUE (left)-[:{RelLabel}]->(right);")
@@ -133,24 +195,23 @@ class Driver:
 						RightAttr = self.__getNodeAttributes()[0], RightValue = endURL,\
 						RelLabel = self.__getRelationshipLabel())		
 		self.__runQuery(query_text)
+		'''
+		
 	
-	def __runQuery(self, query_text):
-		graph_db = self.__connect()		
-		query = neo4j.CypherQuery(graph_db, query_text)
+	def __runQuery(self, query_text):	
+		query = neo4j.CypherQuery(self.db, query_text)
 		try:
 			query.run()
 		except neo4j.CypherError as ce:
 			if(str(ce).find("already exist") == -1):
 				raise ce
 			
-	def __executeOne(self, query_text):
-		graph_db = self.__connect()		
-		query = neo4j.CypherQuery(graph_db, query_text)
+	def __executeOne(self, query_text):	
+		query = neo4j.CypherQuery(self.db, query_text)
 		return query.execute_one()
 	
-	def __iterateOverResult(self, query_text):
-		graph_db = self.__connect()		
-		query = neo4j.CypherQuery(graph_db, query_text)
+	def __iterateOverResult(self, query_text):		
+		query = neo4j.CypherQuery(self.db, query_text)
 		return query.stream()
 		
 	def countNodes(self):
@@ -190,14 +251,8 @@ class Driver:
 		Se il DB viene creato ex-novo e' definito anche lo schema e
 		gli indici.
 		'''
+		self.db.clear()
 		self.__initDB()
-		query_delete_rel = "MATCH ()-[l:{Label}]->() DELETE l;"
-		query_delete_nodes = "MATCH (n:{Label}) DELETE n;"
-		query_delete_rel = query_delete_rel.format(Label = self.__getRelationshipLabel())
-		query_delete_nodes = query_delete_nodes.format(Label = self.__getNodeLabel())
-		
-		self.__runQuery(query_delete_rel)
-		self.__runQuery(query_delete_nodes)
 	
 	def getNodes(self):
 		query_text = "MATCH (n:Page) RETURN Id(n) as Id, n.url, n.title;"
