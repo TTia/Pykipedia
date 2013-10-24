@@ -11,14 +11,60 @@ from unittest.mock import Mock
 from pykipedia.neo4j.driver import Driver
 
 class DriverUnitTesting(unittest.TestCase):	
+	
+	def test_emptyDB(self):
+		gen = GexfGenerator()
+		gen.generateGexfFile(self.__buildNeo4JMockDriver(0,0))
+		assert(self.__validateGexfFile())
 
-	def buildNeo4JMockDriver(self, N, M):
+	def test_onlyNodes(self):
+		gen = GexfGenerator()
+		gen.generateGexfFile(self.__buildNeo4JMockDriver(10,0))
+		assert(self.__validateGexfFile())
+	
+	def test_onlyEdges(self):
+		gen = GexfGenerator()
+		gen.generateGexfFile(self.__buildNeo4JMockDriver(0,10))
+		assert(self.__validateGexfFile())	
+	
+	def test_nodesAndEdges(self):
+		gen = GexfGenerator()
+		gen.generateGexfFile(self.__buildNeo4JMockDriver(10,10))
+		assert(self.__validateGexfFile())
+
+	'''
+	Stress Test - Mocked
+	(test_#Nodes_#Edges)
+	'''
+	def test_1k_1k(self):
+		self.__runStressTest(1000, 1000, "1k, 1k")		
+
+	def test_10k_10k(self):
+		self.__runStressTest(10000, 10000, "10k, 10k")
+
+	def test_100k_100k(self):
+		self.__runStressTest(100000, 100000, "100k, 100k")
+		
+	def test_1kk_1kk(self):
+		self.__runStressTest(1000000, 1000000, "1kk, 1kk")
+	
+	def __runStressTest(self, N, M, label = ""):
+		print(label)
+		startTime = datetime.datetime.now()
+		gen = GexfGenerator()
+		gen.generateGexfFile(self.__buildNeo4JMockDriver(N,M))
+		delta = (datetime.datetime.now()-startTime)
+		
+		print(divmod(delta.days * 86400 + delta.seconds, 60))
+		#assert(self.validateGexfFile())
+	
+	def __buildNeo4JMockDriver(self, N, M):
 		driver = Driver()
-		driver.getNodes = Mock(return_value = self.generateNodes(N))
-		driver.getEdges = Mock(return_value = self.generateEdges(M))
+		driver.getNodes = Mock(return_value = self.__generateNodes(N))
+		driver.getEdges = Mock(return_value = self.__generateEdges(M))
 		return driver
 			
-	def generateEdges(self, M):
+	def __generateEdges(self, M):
 		'''
 		MATCH (sx:Page)-[l:LinkedTo]->(dx:Page) RETURN Id(l) as eId, Id(sx) as Id1, Id(dx) as Id2;
 		'''
@@ -27,7 +73,7 @@ class DriverUnitTesting(unittest.TestCase):
 			yield {"eId" : i, "Id1" : i+1, "Id2": i+2}
 			i += 1
 		
-	def generateNodes(self, N):
+	def __generateNodes(self, N):
 		'''
 		MATCH (n:Page) RETURN Id(n) as Id, n.url, n.title;
 		'''
@@ -37,8 +83,9 @@ class DriverUnitTesting(unittest.TestCase):
 			yield {"Id" : i, "url": "wiki.it/%s" % pagina, "title": pagina}
 			i += 1
 	
-	def validateGexfFile(self):
-		return False
+	def __validateGexfFile(self):
+		ET.parse("wikipedia.gexf")
+		return True
 		
 class GexfGenerator:
 	
@@ -51,22 +98,26 @@ class GexfGenerator:
 		root.append(self.__generateMetadata())
 		root.append(self.__generateGraph())
 		
+		self.gexfFile = open("wikipedia.gexf","w+")
 		splittedXml = self.__indent(root).split("###")
 		self.__writeToFile(splittedXml[0])
 		
-		gexfFile = open("wikipedia.gexf","w+")
-
 		for node in driver.getNodes():
-			gexfFile.write(self.__generateNode(node["Id"], node["url"], node["title"]))
+			nodeGexf = self.__generateNode(str(node["Id"]), node["url"], node["title"])
+			#self.gexfFile.write(ET.tostring(nodeRappr, 'utf-8'))
+			self.gexfFile.write(nodeGexf)
+			
 			
 		splittedXml = splittedXml[1].split("@@@")
-		gexfFile.write(splittedXml[0])
+		self.gexfFile.write(splittedXml[0])
 		
 		for edge in driver.getEdges():
-			gexfFile.write(self.__generateEdge(edge["eId"], edge["Id1"], edge["Id2"]))
+			edgeGexf = self.__generateEdge(edge["eId"], edge["Id1"], edge["Id2"])
+			#self.gexfFile.write(ET.tostring(edgeRappr, 'utf-8'))
+			self.gexfFile.write(edgeGexf)
 		
-		gexfFile.write(splittedXml[1])
-		gexfFile.close()
+		self.gexfFile.write(splittedXml[1])
+		self.gexfFile.close()
 	
 	def __generateMetadata(self):
 		'''
@@ -107,10 +158,14 @@ class GexfGenerator:
 		return edges
 	
 	def __generateNode(self, nodeId, url, title):
-		return ET.Element("node", {"id": nodeId, "label": title})
+		nodeGexf = "\t\t<node id=\"{nodeId}\" label=\"{title}\" />\n"
+		return nodeGexf.format(nodeId = nodeId, title = title)
+		#return ET.Element("node", {"id": nodeId, "label": title})
 	
 	def __generateEdge(self, edgeId, sourceId, targetId):
-		return ET.Element("edge", {"id": edgeId, "source": sourceId, "target": targetId})
+		edgeGexf = "\t\t<edge id=\"{edgeId}\" source=\"{sourceId}\" target=\"{targetId}\" />"
+		return edgeGexf.format(edgeId = edgeId, sourceId = sourceId, targetId = targetId)
+		#return ET.Element("edge", {"id": edgeId, "source": sourceId, "target": targetId})
 
 	def __indent(self, element):
 		xmlText = ET.tostring(element, 'utf-8')
@@ -118,18 +173,4 @@ class GexfGenerator:
 		return xmlText.toprettyxml(indent="\t")
 	
 	def __writeToFile(self, xmlRappresentation):
-		gexfFile = open("wikipedia.gexf","w")
-		gexfFile.write(xmlRappresentation)
-		gexfFile.close()
-
-'''
-    <graph mode="static" defaultedgetype="directed">
-        <nodes>
-            <node id="0" label="Hello" />
-            <node id="1" label="Word" />
-        </nodes>
-        <edges>
-            <edge id="0" source="0" target="1" />
-        </edges>
-    </graph>
-'''
+		self.gexfFile.write(xmlRappresentation)
