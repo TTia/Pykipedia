@@ -16,9 +16,6 @@ class DriverStressTest(unittest.TestCase):
 	def setUp(self):
 		self.driver = Driver()
 		self.driver.resetDB()
-	
-	def tearDown(self):
-		self.driver.resetDB()
 		
 	'''
 	Stress Test - "Mocked" Crawler
@@ -29,22 +26,13 @@ class DriverStressTest(unittest.TestCase):
 
 	def test_1k_5k(self):
 		self.__runStressTest(1000, 5000, "1k, 5k")
-
-	#def test_100k_100k(self):
-	#	self.__runStressTest(100000, 100000, "100k, 100k")
 	
 	def __runStressTest(self, N, M, label = ""):
-		print(label)
-		startTime = datetime.datetime.now()
-		
 		for node in self.__generateNodes(N):
 			self.driver.createNode([node["url"], node["title"]])
 		
 		for edge in self.__generateEdges(M):
 			self.driver.createNode([edge["startUrl"], edge["endUrl"]])
-					
-		delta = (datetime.datetime.now()-startTime)
-		print(divmod(delta.days * 86400 + delta.seconds, 60))
 	
 	def __generateEdges(self, M):
 		edges = 0		
@@ -72,9 +60,6 @@ class DriverStressTest(unittest.TestCase):
 class DriverUnitTesting(unittest.TestCase):	
 	def setUp(self):
 		self.driver = Driver()
-		self.driver.resetDB()
-
-	def tearDown(self):
 		self.driver.resetDB()
 		
 	def test_isDBEmpty(self):
@@ -138,8 +123,18 @@ class DriverUnitTesting(unittest.TestCase):
 		assert(edges == 3)
 
 class Driver:
+	
 	def __init__(self):
 		self.db = neo4j.GraphDatabaseService("http://localhost:7474/db/data/")
+		
+		query_text = """MATCH (left:Page), (right:Page)\n
+					WHERE left.url = {LeftUrlValue} and right.url = {RightUrlValue}\n
+					CREATE UNIQUE (left)-[:LinkedTo]->(right);"""
+		self.queryCreateUniqueEdge = neo4j.CypherQuery(self.db, query_text)
+		
+		query_text = "CREATE (p:Page{ url: {url}, title: {title} });"
+		self.queryCreateNode = neo4j.CypherQuery(self.db, query_text)
+		
 
 	def __getNodeLabel(self):
 		return "Page"
@@ -173,15 +168,12 @@ class Driver:
 		Crea un nuovo nodo sul db.
 		:param attributes: lista degli attributi di un singolo nodo. [url, titolo]
 		'''
-		
-		fields = self.__getNodeAttributes()
-		
-		query_text = "CREATE (p:{Label}{{ {Url}:'{UrlValue}', {Title}: '{TitleValue}' }});"
-		query_text =  query_text.format(Label = self.__getNodeLabel(),\
-									Url = fields[0], UrlValue = attributes[0],\
-									Title = fields[1], TitleValue = attributes[1])
-		self.__runQuery(query_text)
-		
+		try:
+			self.queryCreateNode.run(url = attributes[0], title = attributes[1])
+		except neo4j.CypherError as ce:
+			if(str(ce).find("already exist") == -1):
+				raise ce
+				
 	def createEdge(self, startURL, endURL):
 		'''
 		Crea un nuovo arco orientato sul db.
@@ -189,24 +181,11 @@ class Driver:
 		:param endURL: url della voce a cui il link si riferisce. 
 		'''
 		
-		query_text = ("MATCH (left:{LeftLabel}), (right:{RightLabel}) "
-					"WHERE left.{LeftAttr} = '{LeftValue}' and right.{RightAttr} = '{RightValue}' "
-					"CREATE UNIQUE (left)-[:{RelLabel}]->(right);")
-		query_text =  query_text.format(LeftLabel = self.__getNodeLabel(),\
-						RightLabel = self.__getNodeLabel(),\
-						LeftAttr = self.__getNodeAttributes()[0], LeftValue = startURL,\
-						RightAttr = self.__getNodeAttributes()[0], RightValue = endURL,\
-						RelLabel = self.__getRelationshipLabel())		
-		self.__runQuery(query_text)
-		
+		self.queryCreateUniqueEdge.run(LeftUrlValue = startURL, RightUrlValue = endURL)
+	
 	def __runQuery(self, query_text):
-		query = neo4j.CypherQuery(self.db, query_text)
-		try:
-			query.run()
-		except neo4j.CypherError as ce:
-			if(str(ce).find("already exist") == -1):
-				raise ce
-		
+		neo4j.CypherQuery(self.db, query_text).run()
+
 	def __executeOne(self, query_text):	
 		query = neo4j.CypherQuery(self.db, query_text)
 		return query.execute_one()
@@ -219,29 +198,24 @@ class Driver:
 		'''
 		Restituisce il numero di nodi presenti sul db.
 		'''
-		query_text = "MATCH (p:{Label}) RETURN count(p) as nodi;";
-		query_text = query_text.format(Label = self.__getNodeLabel())
+		query_text = "MATCH (p) RETURN count(p) as nodi;";
 		return self.__executeOne(query_text)
 		
 	def countRelationship(self):
 		'''
 		Restituisce il numero di relazioni presenti sul db.
 		'''
-		query_text = "MATCH ()-[r:{Label}]->() RETURN count(r) as archi;";
-		query_text = query_text.format(Label = self.__getRelationshipLabel())
+		query_text = "MATCH ()-[r]->() RETURN count(r) as archi;";
 		return self.__executeOne(query_text)
 	
 	def countRelationshipBeetween(self, startURL, endURL):
 		'''
 		Restituisce il numero di link diretti dalla pagina 'startURL' a 'endURL'.
 		'''		
-		query_text = """MATCH (left:{LeftLabel})-[l:{RelLabel}]->(right:{RightLabel})
+		query_text = """MATCH (left)-[l]->(right)
 					\nWHERE left.{LeftAttr} = '{LeftValue}' and right.{RightAttr} = '{RightValue}'
 					\nRETURN count(l) as archi;"""
-		query_text = query_text.format(LeftLabel = self.__getNodeLabel(),\
-						RelLabel = self.__getRelationshipLabel(),\
-						RightLabel = self.__getNodeLabel(),\
-						LeftAttr = self.__getNodeAttributes()[0], LeftValue = startURL,\
+		query_text = query_text.format(LeftAttr = self.__getNodeAttributes()[0], LeftValue = startURL,\
 						RightAttr = self.__getNodeAttributes()[0], RightValue = endURL)	
 									
 		return self.__executeOne(query_text)
@@ -256,9 +230,9 @@ class Driver:
 		self.__initDB()
 	
 	def getNodes(self):
-		query_text = "MATCH (n:Page) RETURN Id(n) as Id, n.url, n.title;"
+		query_text = "MATCH (n) RETURN Id(n) as Id, n.url, n.title;"
 		return self.__iterateOverResult(query_text)
 		
 	def getEdges(self):
-		query_text = "MATCH (sx:Page)-[l:LinkedTo]->(dx:Page) RETURN Id(l) as eId, Id(sx) as Id1, Id(dx) as Id2;"
+		query_text = "MATCH (sx)-[l]->(dx) RETURN Id(l) as eId, Id(sx) as Id1, Id(dx) as Id2;"
 		return self.__iterateOverResult(query_text)

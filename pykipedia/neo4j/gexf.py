@@ -51,13 +51,9 @@ class DriverUnitTesting(unittest.TestCase):
 		self.__runStressTest(1000000, 1000000, "1kk, 1kk")
 	
 	def __runStressTest(self, N, M, label = ""):
-		print(label)
-		startTime = datetime.datetime.now()
 		gen = GexfGenerator()
 		gen.generateGexfFile(self.__buildNeo4JMockDriver(N,M))
-		delta = (datetime.datetime.now()-startTime)
-		
-		print(divmod(delta.days * 86400 + delta.seconds, 60))
+
 		#assert(self.validateGexfFile())
 	
 	def __buildNeo4JMockDriver(self, N, M):
