@@ -8,6 +8,7 @@ from random import randint
 import unittest
 
 from py2neo import neo4j
+import py2neo
 
 
 class DriverStressTest(unittest.TestCase):
@@ -26,8 +27,8 @@ class DriverStressTest(unittest.TestCase):
 	def test_1k_1k(self):
 		self.__runStressTest(1000, 1000, "1k, 1k")		
 
-	#def test_10k_10k(self):
-	#	self.__runStressTest(10000, 10000, "10k, 10k")
+	def test_1k_5k(self):
+		self.__runStressTest(1000, 5000, "1k, 5k")
 
 	#def test_100k_100k(self):
 	#	self.__runStressTest(100000, 100000, "100k, 100k")
@@ -138,7 +139,7 @@ class DriverUnitTesting(unittest.TestCase):
 
 class Driver:
 	def __init__(self):
-		self.db = neo4j.GraphDatabaseService("http://localhost:7474/db/data/") 
+		self.db = neo4j.GraphDatabaseService("http://localhost:7474/db/data/")
 
 	def __getNodeLabel(self):
 		return "Page"
@@ -187,7 +188,7 @@ class Driver:
 		:param startURL: url della voce che contiene il link.
 		:param endURL: url della voce a cui il link si riferisce. 
 		'''
-		'''
+		
 		query_text = ("MATCH (left:{LeftLabel}), (right:{RightLabel}) "
 					"WHERE left.{LeftAttr} = '{LeftValue}' and right.{RightAttr} = '{RightValue}' "
 					"CREATE UNIQUE (left)-[:{RelLabel}]->(right);")
@@ -197,17 +198,15 @@ class Driver:
 						RightAttr = self.__getNodeAttributes()[0], RightValue = endURL,\
 						RelLabel = self.__getRelationshipLabel())		
 		self.__runQuery(query_text)
-		'''
 		
-	
-	def __runQuery(self, query_text):	
+	def __runQuery(self, query_text):
 		query = neo4j.CypherQuery(self.db, query_text)
 		try:
 			query.run()
 		except neo4j.CypherError as ce:
 			if(str(ce).find("already exist") == -1):
 				raise ce
-			
+		
 	def __executeOne(self, query_text):	
 		query = neo4j.CypherQuery(self.db, query_text)
 		return query.execute_one()
