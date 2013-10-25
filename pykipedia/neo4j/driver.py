@@ -3,13 +3,10 @@ Created on 17/ott/2013
 @author: Mattia
 '''
 
-import datetime
 from random import randint
 import unittest
 
 from py2neo import neo4j
-import py2neo
-
 
 class DriverStressTest(unittest.TestCase):
 
