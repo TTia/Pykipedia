@@ -3,12 +3,14 @@ Created on 22/ott/2013
 
 @author: Mattia
 '''
-import xml.etree.ElementTree as ET
-import xml.dom.minidom as MiniDOM
 import datetime
 import unittest
 from unittest.mock import Mock
+
 from pykipedia.neo4j.driver import Driver
+import xml.dom.minidom as MiniDOM
+import xml.etree.ElementTree as ET
+
 
 class DriverUnitTesting(unittest.TestCase):	
 	

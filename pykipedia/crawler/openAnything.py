@@ -9,10 +9,10 @@ __copyright__ = 'Copyright (c) 2004 Mark Pilgrim'
 __license__ = 'Python'
 
 
-from io import BytesIO
-from urllib.request import *
-from urllib.parse import *
 from gzip import *
+from io import BytesIO
+from urllib.parse import *
+from urllib.request import *
 
 
 USER_AGENT = 'pykiPedia/0.1 (http://example.com/MyCoolTool/; MyCoolTool@example.com) BasedOnSuperLib/1.4'

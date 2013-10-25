@@ -1,5 +1,7 @@
-from crawler.openAnything import *
 import json
+
+from crawler.openAnything import *
+
 
 class Node():
     
