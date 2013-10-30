@@ -1,8 +1,5 @@
-<<<<<<< HEAD
-=======
 from crawler.openAnything import *
 from neo4j.driver import *
->>>>>>> crawler logic finished, very bad code, I'll improve!
 import json
 import urllib
 import re
