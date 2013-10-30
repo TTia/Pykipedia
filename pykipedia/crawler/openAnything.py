@@ -11,8 +11,17 @@ __license__ = 'Python'
 
 from gzip import *
 from io import BytesIO
+<<<<<<< HEAD
 from urllib.parse import *
 from urllib.request import *
+=======
+from io import StringIO
+from urllib.request import *
+from urllib.error import *
+from urllib.parse import *
+from urllib.robotparser import *
+from gzip import *
+>>>>>>> crawler logic finished, very bad code, I'll improve!
 
 
 USER_AGENT = 'pykiPedia/0.1 (http://example.com/MyCoolTool/; MyCoolTool@example.com) BasedOnSuperLib/1.4'
@@ -34,8 +43,7 @@ class SmartRedirectHandler(HTTPRedirectHandler):
 
 class DefaultErrorHandler(HTTPDefaultErrorHandler):
     def http_error_default(self, req, fp, code, msg, headers):
-        result = HTTPError(
-            req.get_full_url(), code, msg, headers, fp)
+        result = HTTPError(req.get_full_url(), code, msg, headers, fp)
         result.status = code
         return result
 
