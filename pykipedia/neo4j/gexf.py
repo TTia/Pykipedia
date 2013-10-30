@@ -7,7 +7,7 @@ import datetime
 import unittest
 from unittest.mock import Mock
 
-from pykipedia.neo4j.driver import Driver
+from neo4j.driver import *
 import xml.dom.minidom as MiniDOM
 import xml.etree.ElementTree as ET
 

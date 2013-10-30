@@ -1,10 +1,9 @@
 from crawler.openAnything import *
 from neo4j.driver import *
+from neo4j.gexf import *
 import json
 import urllib
 import re
-
-from crawler.openAnything import *
 
 
 class Node():
@@ -23,8 +22,8 @@ class Crawler():
     def __init__(self, startPage='Eugenio_Moggi'):
         self.startPage = startPage
         #self.startUrl = "http://en.wikipedia.org/w/api.php?action=parse&format=json&prop=links&page={0}".format(startPage)
-        self.steps = 120
-        self.regEx = re.compile(r"\b[a-zA-Z0-9_\s]+\b", re.ASCII)
+        self.steps = 8
+        self.regEx = re.compile("[a-zA-Z0-9_\s]+$", re.ASCII)
         self.pageList = []
         self.driver = Driver()
         self.driver.resetDB()
@@ -62,3 +61,5 @@ class Crawler():
             vistitingUrl = self.getApiUrl(vistitingName)
             print("--------------------------------------------------\n")
         #print (self.pageList)
+        gen = GexfGenerator()
+        gen.generateGexfFile(self.driver)
