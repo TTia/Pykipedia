@@ -23,9 +23,9 @@ class Crawler():
     def __init__(self, startPage='Eugenio_Moggi'):
         self.startPage = startPage
         #self.startUrl = "http://en.wikipedia.org/w/api.php?action=parse&format=json&prop=links&page={0}".format(startPage)
-        self.steps = 32
+        self.steps = 120
         self.regEx = re.compile(r"\b[a-zA-Z0-9_\s]+\b", re.ASCII)
-        self.pages = []
+        self.pageList = []
         self.driver = Driver()
         self.driver.resetDB()
 
@@ -33,30 +33,34 @@ class Crawler():
         return "http://en.wikipedia.org/w/api.php?action=parse&format=json&prop=links&page={0}".format(urllib.parse.quote(str))
                 
     def startCrawler(self):
-        nodeName = self.startPage
-        url = self.getApiUrl(self.startPage)
+        vistitingName = self.startPage
+        vistitingUrl = self.getApiUrl(self.startPage)
+        self.driver.createNode([vistitingUrl, vistitingName])
         
         for c in range(self.steps):
             print("--------------------------------------------------")
-            print (str(c)+ "->" +url)
-            response = fetch(openAnything(url))
+            print (str(c)+ ". Visiting => " +vistitingUrl)
+            response = fetch(openAnything(vistitingUrl))
             # print(type(response)) --> <class 'dict'>
             # print(type(response['data'])) --> <class 'bytes'>
             #print( response['data'])
-            self.driver.createNode([url, nodeName])
             try:
                 j = json.loads(response['data'].decode('utf-8'))
-                
                 for k in j['parse']['links']:
                     if self.regEx.match(k['*']):
-                        parsedName = "".join(i for i in k['*'] if ord(i)<128)
-                        self.pages.append(parsedName) #solve unicode problem
-                        self.driver.createEdge(url, self.getApiUrl(parsedName))
+                        parsedName = "".join(i for i in k['*'] if ord(i)<128) #solve unicode problem
+                        parsedUrl = self.getApiUrl(parsedName)
+                        self.pageList.append(parsedName) #add new node to list
+                        '''
+                        self.driver.createNode([parsedUrl, parsedName])
+                        self.driver.createEdge(vistitingUrl, parsedUrl)
+                        '''
+                        print (vistitingName + "-->" + parsedName)
                         #print (k['*'])
-                #print (self.pages)
+                #print (self.pageList)
             except KeyError:
                 pass
-            nodeName = self.pages.pop(0)
-            url = self.getApiUrl(nodeName)
+            vistitingName = self.pageList.pop(0)
+            vistitingUrl = self.getApiUrl(vistitingName)
             print("--------------------------------------------------\n")
-        #print (self.pages)
+        #print (self.pageList)
