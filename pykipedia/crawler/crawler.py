@@ -51,10 +51,8 @@ class Crawler():
                         parsedName = "".join(i for i in k['*'] if ord(i)<128) #solve unicode problem
                         parsedUrl = self.getApiUrl(parsedName)
                         self.pageList.append(parsedName) #add new node to list
-                        '''
                         self.driver.createNode([parsedUrl, parsedName])
                         self.driver.createEdge(vistitingUrl, parsedUrl)
-                        '''
                         print (vistitingName + "-->" + parsedName)
                         #print (k['*'])
                 #print (self.pageList)
