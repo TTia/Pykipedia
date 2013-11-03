@@ -1,6 +1,6 @@
-from crawler.openAnything import *
-from neo4j.driver import *
-from neo4j.gexf import *
+from pykipedia.crawler.openAnything import *
+from pykipedia.neo4j.driver import Driver
+from pykipedia.neo4j.gexf import GexfGenerator
 import json
 import urllib
 import re

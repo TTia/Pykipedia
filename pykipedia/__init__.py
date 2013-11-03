@@ -1,5 +1,5 @@
 from datetime import datetime
-from crawler.crawler import Crawler
+from pykipedia.crawler.crawler import Crawler
 
 if __name__ == "__main__":
     start = str(datetime.now())

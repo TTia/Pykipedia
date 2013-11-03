@@ -7,7 +7,7 @@ import datetime
 import unittest
 from unittest.mock import Mock
 
-from neo4j.driver import *
+from pykipedia.neo4j.driver import Driver
 import xml.dom.minidom as MiniDOM
 import xml.etree.ElementTree as ET
 
@@ -101,7 +101,7 @@ class GexfGenerator:
 		self.__writeToFile(splittedXml[0])
 		
 		for node in driver.getNodes():
-			nodeGexf = self.__generateNode(str(node["Id"]), node["url"], node["title"])
+			nodeGexf = self.__generateNode(node[0], node[1], node[2])
 			#self.gexfFile.write(ET.tostring(nodeRappr, 'utf-8'))
 			self.gexfFile.write(nodeGexf)
 			
@@ -110,7 +110,7 @@ class GexfGenerator:
 		self.gexfFile.write(splittedXml[0])
 		
 		for edge in driver.getEdges():
-			edgeGexf = self.__generateEdge(edge["eId"], edge["Id1"], edge["Id2"])
+			edgeGexf = self.__generateEdge(edge[0], edge[1], edge[2])
 			#self.gexfFile.write(ET.tostring(edgeRappr, 'utf-8'))
 			self.gexfFile.write(edgeGexf)
 		
