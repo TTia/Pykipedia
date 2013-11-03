@@ -49,5 +49,7 @@ class Crawler():
             vistitingName = self.pageList.pop(0)
             vistitingUrl = self.getApiUrl(vistitingName)
             print("--------------------------------------------------\n")
+        '''
         gen = GexfGenerator()
         gen.generateGexfFile(self.driver)
+        '''
