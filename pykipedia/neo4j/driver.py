@@ -119,7 +119,7 @@ class DriverUnitTesting(unittest.TestCase):
 		assert(self.driver.countRelationship() == 3)
 		assert(edges == 3)
 
-class Driver:
+class Driver():
 	
 	def __init__(self):
 		self.db = neo4j.GraphDatabaseService("http://localhost:7474/db/data/")
@@ -131,7 +131,6 @@ class Driver:
 		
 		query_text = "CREATE (p:Page{ url: {url}, title: {title} });"
 		self.queryCreateNode = neo4j.CypherQuery(self.db, query_text)
-		
 
 	def __getNodeLabel(self):
 		return "Page"

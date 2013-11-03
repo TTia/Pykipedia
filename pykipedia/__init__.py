@@ -1,10 +1,12 @@
-from datetime import datetime
+from datetime import datetime, date
 from pykipedia.crawler.crawler import Crawler
 
 if __name__ == "__main__":
-    start = str(datetime.now())
+    startTime = datetime.now()
     c = Crawler(steps = 1)
     c.startCrawler()
-    end = str(datetime.now())
+    endTime = datetime.now()
     
-    print("Visit start: {0}\nVisit end: {1}\nEdges: {2}".format(start, end, c.numEdges))
+    print("Visit start: {0}\nVisit end: {1}\nEdges: {2}".format(str(startTime), str(endTime), c.numEdges))
+    delta = endTime - startTime
+    print(delta)
