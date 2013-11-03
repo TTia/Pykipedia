@@ -3,7 +3,7 @@ from pykipedia.crawler.crawler import Crawler
 
 if __name__ == "__main__":
     start = str(datetime.now())
-    c = Crawler()
+    c = Crawler(steps = 1)
     c.startCrawler()
     end = str(datetime.now())
     

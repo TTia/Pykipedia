@@ -8,13 +8,13 @@ import re
 
 class Crawler():
     
-    def __init__(self, startPage='Alan_turing'):
+    def __init__(self, startPage='Alan Turing', steps = 32):
         self.startPage = startPage
         self.regEx = re.compile("[a-zA-Z0-9_\s]+$", re.ASCII)
         self.driver = Driver()
         self.driver.resetDB()
         self.pageList = []
-        self.steps = 32
+        self.steps = steps
         self.numEdges = 0
     
     def __str__(self):
