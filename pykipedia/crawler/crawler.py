@@ -5,60 +5,16 @@ import json
 import urllib
 import re
 
-from queue import Queue
-from threading import Thread    
-
-class Node:
-    def __init__(self, visitingUrl, visitingName):
-        self.visitingUrl = visitingUrl
-        self.visitingName = visitingName
-
-    def isNode(self):
-        return True
-
-class Edge:
-    
-    def __init__(self, visitingUrl, parsedUrl):
-        self.visitingUrl = visitingUrl
-        self.parsedUrl = parsedUrl
-
-    def isNode(self):
-        return False
-
-class Populator(Thread):
-    
-    def __init__(self, queue):
-        Thread.__init__(self)
-        self.queue = queue
-        self.driver = Driver()
-        self.driver.resetDB()
-    
-    def run(self):        
-        while True:
-            item = self.queue.get(True)
-            if type(item) is Node:
-                self.consumeNode(item)
-            else:
-                self.consumeEdge(item)
-            self.queue.task_done()
-
-    def consumeNode(self, node):
-        self.driver.createNode([node.visitingUrl, node.visitingName])
-        print("Node: "+node.visitingName)
-
-    def consumeEdge(self, edge):
-        self.driver.createEdge(edge.visitingUrl, edge.parsedUrl)
-        print("\t\t\t--> "+edge.parsedUrl)
 
 class Crawler():
     
     def __init__(self, startPage='Alan Turing', steps = 32):
         self.startPage = startPage
         self.regEx = re.compile("[a-zA-Z0-9_\s]+$", re.ASCII)
-
+        self.driver = Driver()
+        self.driver.resetDB()
         self.pageList = []
         self.steps = steps
-        
         self.numEdges = 0
     
     def __str__(self):
@@ -69,44 +25,30 @@ class Crawler():
         return "http://en.wikipedia.org/w/api.php?action=parse&format=json&prop=links&page={0}".format(urllib.parse.quote(str))
                 
     def startCrawler(self):
-        visitingName = self.startPage
-        visitingUrl = self.getApiUrl(self.startPage)
-        
-        queue = Queue()
-        populator = Populator(queue)
-        populator.daemon = True
-        populator.start()
-
-        queue.put(Node(visitingUrl, visitingName), True)     
-        #self.driver.createNode([visitingUrl, visitingName])
+        vistitingName = self.startPage
+        vistitingUrl = self.getApiUrl(self.startPage)
+        self.driver.createNode([vistitingUrl, vistitingName])
         
         for c in range(self.steps):
-            #print("--------------------------------------------------")
-            #print (str(c)+ ". Visiting => " +visitingUrl)
-            response = fetch(openAnything(visitingUrl)) # <class 'dict'>
+            print("--------------------------------------------------")
+            print (str(c)+ ". Visiting => " +vistitingUrl)
+            response = fetch(openAnything(vistitingUrl)) # <class 'dict'>
             try:
                 j = json.loads(response['data'].decode('utf-8'))
                 for k in j['parse']['links']:
                     if self.regEx.match(k['*']):
                         parsedName = "".join(i for i in k['*'] if ord(i)<128) #solve unicode problem
                         parsedUrl = self.getApiUrl(parsedName)
-
                         self.pageList.append(parsedName) #add new node to list
-                        
-                        #self.driver.createNode([parsedUrl, parsedName])
-                        queue.put(Node(parsedUrl, parsedName), True)
-                        #self.driver.createEdge(visitingUrl, parsedUrl)
-                        queue.put(Edge(visitingUrl, parsedUrl), True)
+                        self.driver.createNode([parsedUrl, parsedName])
+                        self.driver.createEdge(vistitingUrl, parsedUrl)
                         self.numEdges = self.numEdges + 1
-                        #print (visitingName + "-->" + parsedName)
-                        
+                        print (vistitingName + "-->" + parsedName)
             except KeyError:
                 pass
-            visitingName = self.pageList.pop(0)
-            visitingUrl = self.getApiUrl(visitingName)
-            #print("--------------------------------------------------\n")
-            
-        queue.join()
+            vistitingName = self.pageList.pop(0)
+            vistitingUrl = self.getApiUrl(vistitingName)
+            print("--------------------------------------------------\n")
         '''
         gen = GexfGenerator()
         gen.generateGexfFile(self.driver)
