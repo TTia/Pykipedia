@@ -107,7 +107,6 @@ class Crawler():
             #print("--------------------------------------------------\n")
             
         queue.join()
-        '''
         gen = GexfGenerator()
-        gen.generateGexfFile(self.driver)
-        '''
+        gen.generateGexfFile(Driver())
+        
