@@ -161,7 +161,7 @@ class GexfGenerator:
 		#return ET.Element("node", {"id": nodeId, "label": title})
 	
 	def __generateEdge(self, edgeId, sourceId, targetId):
-		edgeGexf = "\t\t<edge id=\"{edgeId}\" source=\"{sourceId}\" target=\"{targetId}\" />\n"
+		edgeGexf = "\t\t<edge id=\"{edgeId}\" source=\"{sourceId}\" target=\"{targetId}\" />"
 		return edgeGexf.format(edgeId = edgeId, sourceId = sourceId, targetId = targetId)
 		#return ET.Element("edge", {"id": edgeId, "source": sourceId, "target": targetId})
 

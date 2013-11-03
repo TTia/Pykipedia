@@ -1,84 +1,8 @@
 <?xml version="1.0" ?>
 <gexf version="1.2" xmlns="http://www.gexf.net/1.2draft">
-	<meta lastmodifieddate="2013-11-03">
+	<meta lastmodifieddate="2013-10-31">
 		<creator>Pykipedia</creator>
 		<description>Wikipedia graph - Crawled with Pykipedia</description>
 	</meta>
 	<graph defaultedgetype="directed" mode="static">
-		<nodes>		<node id="1970" label="Manolo Gabbiadini" />
-		<node id="1971" label="Andrea Petagna" />
-		<node id="1972" label="Angelo Palombo" />
-		<node id="1973" label="Association football" />
-		<node id="1974" label="Bartosz Salamon" />
-		<node id="1975" label="Bern" />
-		<node id="1976" label="Birkir Bjarnason" />
-		<node id="1977" label="Calcinate" />
-		<node id="1978" label="Daniele Gasparetto" />
-		<node id="1979" label="Daniele Gastaldello" />
-		<node id="1980" label="Davide Gavazzi" />
-		<node id="1981" label="Delio Rossi" />
-		<node id="1982" label="England national football team" />
-		<node id="1983" label="Enzo Maresca" />
-		<node id="1984" label="Gaetano Berardi" />
-		<node id="1985" label="Gianluca Sansone" />
-		<node id="1986" label="Italian Serie A" />
-		<node id="1987" label="Italy national football team" />
-		<node id="1988" label="James Troisi" />
-		<node id="1989" label="Juventus" />
-		<node id="1990" label="Lorenzo De Silvestri" />
-		<node id="1991" label="Matteo Ardemagni" />
-		<node id="1992" label="Melania Gabbiadini" />
-		<node id="1993" label="Mirko Eramo" />
-		<node id="1994" label="Nicola Pozzi" />
-		<node id="1995" label="Paolo Castellini" />
-		<node id="1996" label="Pedro Obiang" />
-		<node id="1997" label="Renan Garcia" />
-		<node id="1998" label="Roberto Soriano" />
-		<node id="1999" label="Savvas Gentsoglou" />
-		<node id="2000" label="Serie A" />
-		<node id="2001" label="Serie B" />
-		<node id="2002" label="Shkodran Mustafi" />
-		<node id="2003" label="Simon Poulsen" />
-		<node id="2004" label="Simone Tiribocchi" />
-		<node id="2005" label="Vasco Regini" />
-		<node id="2006" label="Vincenzo Fiorillo" />
-</nodes>
-		<edges>		<edge id="1957" source="1970" target="1971" />
-		<edge id="1958" source="1970" target="1972" />
-		<edge id="1959" source="1970" target="1973" />
-		<edge id="1960" source="1970" target="1974" />
-		<edge id="1961" source="1970" target="1975" />
-		<edge id="1962" source="1970" target="1976" />
-		<edge id="1963" source="1970" target="1977" />
-		<edge id="1964" source="1970" target="1978" />
-		<edge id="1965" source="1970" target="1979" />
-		<edge id="1966" source="1970" target="1980" />
-		<edge id="1967" source="1970" target="1981" />
-		<edge id="1968" source="1970" target="1982" />
-		<edge id="1969" source="1970" target="1983" />
-		<edge id="1970" source="1970" target="1984" />
-		<edge id="1971" source="1970" target="1985" />
-		<edge id="1972" source="1970" target="1986" />
-		<edge id="1973" source="1970" target="1987" />
-		<edge id="1974" source="1970" target="1988" />
-		<edge id="1975" source="1970" target="1989" />
-		<edge id="1976" source="1970" target="1990" />
-		<edge id="1977" source="1970" target="1991" />
-		<edge id="1978" source="1970" target="1992" />
-		<edge id="1979" source="1970" target="1993" />
-		<edge id="1980" source="1970" target="1994" />
-		<edge id="1981" source="1970" target="1995" />
-		<edge id="1982" source="1970" target="1996" />
-		<edge id="1983" source="1970" target="1997" />
-		<edge id="1984" source="1970" target="1998" />
-		<edge id="1985" source="1970" target="1999" />
-		<edge id="1986" source="1970" target="2000" />
-		<edge id="1987" source="1970" target="2001" />
-		<edge id="1988" source="1970" target="2002" />
-		<edge id="1989" source="1970" target="2003" />
-		<edge id="1990" source="1970" target="2004" />
-		<edge id="1991" source="1970" target="2005" />
-		<edge id="1992" source="1970" target="2006" />
-</edges>
-	</graph>
-</gexf>
+		<nodes>
