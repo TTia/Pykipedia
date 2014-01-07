@@ -233,3 +233,54 @@ class Driver:
 	def getEdges(self):
 		query_text = "MATCH (sx)-[l]->(dx) RETURN Id(l) as eId, Id(sx) as Id1, Id(dx) as Id2;"
 		return self.__iterateOverResult(query_text)
+	
+	'''
+	Betweeness (statica|dinamica)
+MATCH (n)
+SET n.o = 0;
+
+MATCH p = allShortestPaths((source)-->(destination))
+WHERE source <> destination and length(nodes(p)) > 2
+FOREACH (n in nodes(p) | SET n.o = n.o + 1);
+
+MATCH (n)
+WHERE has(n.o)
+RETURN n.title, n.o
+ORDER BY n.o DESC
+LIMIT 1;
+	'''
+	'''
+	Degree
+START n = node(*) 
+MATCH (n)--(c)
+RETURN n.title, count(*) as connections
+ORDER BY connections DESC
+LIMIT 1;
+---
+START n = node(*) 
+MATCH (n)--(c)
+WITH n.title as title, count(*) as connections
+RETURN title
+ORDER BY connections DESC
+LIMIT 1;
+	'''
+	'''
+	Failure
+START t=node(*)
+RETURN t.title
+SKIP {R}
+LIMIT 1
+---
+START t=node(*)
+WITH t
+SKIP {R}
+MATCH (t)-[r]-(neighbors)
+RETURN neighbors.title;
+	'''
+	'''
+	Delete
+START n=node(*)
+MATCH (n)-[r?]-()
+WHERE n.title = {Title}
+DELETE r,n;
+	'''

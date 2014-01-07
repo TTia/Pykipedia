@@ -87,7 +87,7 @@ class DriverUnitTesting(unittest.TestCase):
 		
 class GexfGenerator:
 	
-	def generateGexfFile(self, driver):
+	def generateGexfFile(self, driver, filename="wikipedia.gexf"):
 		'''
 		<gexf xmlns="http://www.gexf.net/1.2draft" version="1.2">
 		'''
@@ -96,7 +96,7 @@ class GexfGenerator:
 		root.append(self.__generateMetadata())
 		root.append(self.__generateGraph())
 		
-		self.gexfFile = open("wikipedia.gexf","w+")
+		self.gexfFile = open(filename,"w+")
 		splittedXml = self.__indent(root).split("###")
 		self.__writeToFile(splittedXml[0])
 		
