@@ -195,7 +195,7 @@ class Driver:
 		'''
 		Restituisce il numero di nodi presenti sul db.
 		'''
-		query_text = "MATCH (p) RETURN count(p) as nodi;";
+		query_text = "MATCH (p:Page) RETURN count(p) as nodi;";
 		return self.__executeOne(query_text)
 		
 	def countRelationship(self):
@@ -232,6 +232,13 @@ class Driver:
 		
 	def getEdges(self):
 		query_text = "MATCH (sx)-[l]->(dx) RETURN Id(l) as eId, Id(sx) as Id1, Id(dx) as Id2;"
+		return self.__iterateOverResult(query_text)
+	
+	def getNodesAndNeighbours(self):
+		query_text = """START n=node(*)
+						MATCH (n)-[r?]->(m)
+						RETURN Id(n), count(r) as ograde, extract(x IN collect(m) | Id(x)) as neighbours
+						ORDER BY Id(n);"""
 		return self.__iterateOverResult(query_text)
 	
 	'''

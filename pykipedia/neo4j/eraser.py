@@ -7,6 +7,19 @@ import random
 from py2neo import neo4j
 from pykipedia.neo4j.gexf import GexfGenerator
 
+'''
+Attacchi da scrivere:
++ correggere degree in outDegree
++ inDegree
++ degree
++ betweenness statica
++ pageRank statico
+
+Plotting:
++individuare una misura di riferimento (efficienza?)
++invece che produrre i gexf produrre file per gnuplot
+'''
+
 class Eraser(object):
     def __init__(self, driver):
         self.random = random.Random()
