@@ -34,13 +34,13 @@ class PageRank():
             pi_next[key] = 0
         p = 1 - alpha
         
-        for node in self.driver.getNodesAndNeighbours():
-            m = node[1]
-            j = node[0]
+        for node in self.driver.getNodesAndNeighbours(): #Query
+            m = node[1] #Grado uscente del nodo J
+            j = node[0] #Id del nodo J - L'id dato dal database
             if m == 0:
                 p += alpha * pi[j]
             else:
-                for k in node[2]:
+                for k in node[2]: #Collezione degli id dei vicini a J (J->K)
                     pi_next[k] += alpha * (pi[j]/m)
 
         for key in pi_next:
