@@ -5,17 +5,18 @@ from pykipedia.neo4j.driver import Driver
 from pykipedia.neo4j.eraser import Eraser
 from pykipedia.neo4j.pageRank import PageRank
 
-if __name__ == "__main__":
+if __name__ == "__main__":  
     '''
     pageRank = PageRank()
     pageRank.rank()
     '''
     '''
     start = str(datetime.now())
-    c = Crawler(steps = 100)
+    c = Crawler(steps = 32)
     c.startCrawler()
     end = str(datetime.now())
     print("Visit start: {0}\nVisit end: {1}\nEdges: {2}".format(start, end, c.numEdges))
+    '''
     '''
     driver = Driver()
     gen = GexfGenerator()
@@ -23,8 +24,10 @@ if __name__ == "__main__":
     '''
     driver = Driver()
     eraser = Eraser(driver)
-    print(str(driver.countNodes()))
-    #eraser.eraseGraph(eraser.attackByDegree)
-    eraser.eraseGraph(eraser.failure)
-    print(str(driver.countNodes()))
+    eraser.eraseGraph(eraser.attackByDegree)
+    '''
+    print(str(datetime.now()))
+    driver = Driver()
+    driver.getEfficency(driver.countNodes())
+    print(str(datetime.now()))
     '''

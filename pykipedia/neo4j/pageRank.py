@@ -14,8 +14,8 @@ ORDER BY Id(n);
 
 class PageRank():
     
-    def __init__(self):
-        self.driver = Driver()
+    def __init__(self, driver = Driver()):
+        self.driver = driver
 
     def rank(self, alpha = 0.85, it_count = 50, k = 20):
         pi, pi_next = self.initializeDistribution()
@@ -27,7 +27,7 @@ class PageRank():
             pi = pi_next
             pi_next = temp
 
-        self.naiveTopK(k, pi)
+        return self.naiveTopK(k, pi)
     
     def it(self, pi, pi_next, alpha, n):
         for key in pi_next:
@@ -58,6 +58,7 @@ class PageRank():
             if i>=k:
                 break
             i+=1
+        return orderedView
 
     def initializeDistribution(self):
         dist = 1.0/self.driver.countNodes()

@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <gexf version="1.2" xmlns="http://www.gexf.net/1.2draft">
-	<meta lastmodifieddate="2014-02-26">
+	<meta lastmodifieddate="2014-03-08">
 		<creator>Pykipedia</creator>
 		<description>Wikipedia graph - Crawled with Pykipedia</description>
 	</meta>

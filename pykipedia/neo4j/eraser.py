@@ -5,20 +5,8 @@ Created on 30/dic/2013
 '''
 import random
 from py2neo import neo4j
-from pykipedia.neo4j.gexf import GexfGenerator
-
-'''
-Attacchi da scrivere:
-+ correggere degree in outDegree
-+ inDegree
-+ degree
-+ betweenness statica
-+ pageRank statico
-
-Plotting:
-+individuare una misura di riferimento (efficienza?)
-+invece che produrre i gexf produrre file per gnuplot
-'''
+from pykipedia.neo4j.pageRank import PageRank
+from py2neo.packages.httpstream import SocketError
 
 class Eraser(object):
     def __init__(self, driver):
@@ -26,100 +14,191 @@ class Eraser(object):
         self.driver = driver
         deleteNode_query_text = """START n=node(*)
                                     MATCH (n)-[r?]-()
-                                    WHERE n.title = {Title}
-                                    DELETE r,n;"""
+                                    WHERE Id(n) = {Id}
+                                    DELETE r,n
+                                    RETURN count(r) as rels
+                                    LIMIT 1;"""
         self.queryDeleteNode = neo4j.CypherQuery(self.driver.db, deleteNode_query_text)
 
+        self.defineDegreeAttacks()
+        self.defineFailureAttack()
+        self.definePointedAttack()
+        self.definePointingAttack()
+
+    def eraseGraph(self, deleteMethod, plots = 20):
+        aliveNodes = self.driver.countNodes()
+        aliveRelationships = M = self.driver.countRelationship()
+        previousRelsCount = 0
+        iPlots = plots
+        
+        if deleteMethod == self.attackByBetweeness:
+            self.defineAttackByByBetweeness()
+        if deleteMethod ==  self.attackByPageRank:
+            self.defineAttackByPageRank()
+            
+        while aliveNodes > 0 and aliveRelationships > 0:
+            (dn, dr) = self.deleteNode(deleteMethod, aliveNodes)
+            aliveNodes -= dn
+            aliveRelationships -= dr
+            if aliveRelationships <= (M / plots)*iPlots and previousRelsCount != aliveRelationships:
+                efficiency = self.driver.getEfficency(aliveNodes) 
+                self.plot(aliveNodes, efficiency, deleteMethod.__name__)
+                iPlots -= 1
+            previousRelsCount = aliveRelationships
+            print("Nodes: "+str(aliveNodes)+" Rels: "+str(aliveRelationships))
+        self.plot(aliveNodes, 0.0, deleteMethod.__name__)
+        self.plot(0, 0.0, deleteMethod.__name__)
+        
+    def deleteNode(self, deleteMethod, aliveNodes = 0):
+        deletedNodes = 0
+        deletedRels = 0
+        if deleteMethod == self.failurePointed or deleteMethod == self.failurePointing:
+            ids = deleteMethod(aliveNodes)
+            for _id in ids:
+                r = self.queryDeleteNode.execute_one(Id = _id[0])
+                deletedNodes += 1
+                deletedRels += r
+        elif deleteMethod == self.failure:
+            _id = deleteMethod(aliveNodes)
+            r = self.queryDeleteNode.execute_one(Id = _id)
+            deletedNodes = 1
+            deletedRels = r
+        else:
+            _id = deleteMethod()
+            r = self.queryDeleteNode.execute_one(Id = _id)
+            deletedNodes = 1
+            deletedRels = r
+        return (deletedNodes, deletedRels)
+        
+    def plot(self, nodes, efficiency, deleteMethodName):
+        with open(deleteMethodName+".txt", "a+") as outputFile:
+            print(str(nodes)+" "+str(efficiency), file=outputFile)
+        outputFile.close()
+
+    def defineDegreeAttacks(self):
+        query_text = """START n = node(*) 
+                                    MATCH (n)-[r?]-()
+                                    WITH n, count(r) as connections
+                                    ORDER BY connections DESC
+                                    LIMIT 1
+                                    RETURN Id(n);"""
+        self.queryDegreeNode = neo4j.CypherQuery(self.driver.db, query_text)
+        query_text = """START n = node(*) 
+                                    MATCH (n)-[r?]->()
+                                    WITH n, count(r) as connections
+                                    ORDER BY connections DESC
+                                    LIMIT 1
+                                    RETURN Id(n);"""
+        self.queryOutDegreeNode = neo4j.CypherQuery(self.driver.db, query_text)
+        query_text = """START n = node(*) 
+                                    MATCH (n)<-[r?]-()
+                                    WITH n, count(r) as connections
+                                    ORDER BY connections DESC
+                                    LIMIT 1
+                                    RETURN Id(n);"""
+        self.queryInDegreeNode = neo4j.CypherQuery(self.driver.db, query_text)
+    
+    def attackByDegree(self):
+        try:
+            _id = self.queryDegreeNode.execute_one()
+        except SocketError:
+            print("Try again...")
+            return self.attackByDegree()
+        return _id
+    
+    def attackByInDegree(self):
+        try:
+            _id = self.queryInDegreeNode.execute_one()
+        except SocketError:
+            print("Try again...")
+            return self.attackByInDegree()
+        return _id
+    
+    def attackByOutDegree(self):
+        try:
+            _id = self.queryOutDegreeNode.execute_one()
+        except SocketError:
+            print("Try again...")
+            return self.attackByOutDegree()
+        return _id
+
+    def definePointingAttack(self):
         randomNode_query_text = """START n=node(*)
                                     WITH n
                                     SKIP {R}
                                     LIMIT 1
-                                    MATCH (n)-[r]-(neighbors)
-                                    RETURN neighbors.title;"""
-        self.queryRandomNode = neo4j.CypherQuery(self.driver.db, randomNode_query_text)
-        
-        degreeNode_query_text = """START n = node(*) 
-                                    MATCH (n)-[r?]->()
-                                    WITH n.title as title, count(r) as connections
-                                    ORDER BY connections DESC
+                                    MATCH (n)<-[r]-(neighbors)
+                                    RETURN Id(neighbors);"""
+        self.queryRandomPointingNeighbours = neo4j.CypherQuery(self.driver.db, randomNode_query_text)
+
+    def definePointedAttack(self):
+        randomNode_query_text = """START n=node(*)
+                                    WITH n
+                                    SKIP {R}
                                     LIMIT 1
-                                    RETURN title;"""
-        self.queryDegreeNode = neo4j.CypherQuery(self.driver.db, degreeNode_query_text)
-        
-        diameter_query_text = """MATCH p = allShortestPaths((source)-->(destination))
-                                WHERE source <> destination and length(nodes(p)) > 2
-                                RETURN max(length(nodes(p))) as Diametro;"""
-        self.queryDiameter = neo4j.CypherQuery(self.driver.db, diameter_query_text)
+                                    MATCH (n)-[r]->(neighbors)
+                                    RETURN Id(neighbors);"""
+        self.queryRandomPointedNeighbours = neo4j.CypherQuery(self.driver.db, randomNode_query_text)
 
-    def eraseGraph(self, deleteMethod, plots = 25):
-        aliveRelationships = M = self.driver.countRelationship()
-        previousRelationshipsCount = 0
-        iPlots = plots
-        '''
-        if deleteMethod == self.attackByBetweeness:
-            self.queryBetweenessA.run()
-            self.queryBetweenessB.run()
-        '''
-            
-        while aliveRelationships > 0:
-            self.deleteNode(deleteMethod)
-            if aliveRelationships <= (M / plots)*iPlots and previousRelationshipsCount != aliveRelationships:
-                #diameter = self.diameter()
-                self.plot(deleteMethod.__name__, plots - iPlots)
-                iPlots -= 1
-            #print("Nodes: "+str(aliveNodes)+" Rels: "+str(aliveRelationships))
-            previousRelationshipsCount = aliveRelationships
-            aliveRelationships = self.driver.countRelationship()
-            print("Rels: "+str(aliveRelationships))
-    '''
-    def diameter(self):
-        diameter = self.queryDiameter.execute_one()
-        print("\t\t\tDiameter:"+str(diameter))
-        return diameter
-    '''
-        
-    def deleteNode(self, deleteMethod):
-        if deleteMethod == self.failure:
-            aliveNodes = self.driver.countNodes()
-            titles = deleteMethod(aliveNodes)
-            for title in titles:
-                #print(title[0])
-                self.queryDeleteNode.run(Title = title[0])
-        else:
-            title = deleteMethod()
-            self.queryDeleteNode.run(Title = title)
-        #print(title)
-        
-    def plot(self, deleteMethodName, step):
-        print("\t\t\tPlot to: "+"wikipedia_"+deleteMethodName+"_"+str(int(step))+".gexf")
-        gen = GexfGenerator()
-        gen.generateGexfFile(self.driver, filename="wikipedia_"+deleteMethodName+"_rels="+str(step)+".gexf")
-
-    
-    def attackByDegree(self):
-        title = self.queryDegreeNode.execute_one()
-        return title
+    def defineFailureAttack(self):
+        randomNode_query_text = """START n=node(*)
+                                    RETURN Id(n)
+                                    SKIP {R}
+                                    LIMIT 1;"""
+        self.queryRandomNode = neo4j.CypherQuery(self.driver.db, randomNode_query_text)
     
     def failure(self, aliveNodes):
         r = random.randrange(aliveNodes)
-        titles = self.queryRandomNode.stream(R = r)
-        return titles
-    
-'''
-    def attackByBetweeness(self):
-        title = self.queryBetweenessC.execute_one()
-        return title
----
+        try:
+            ids = self.queryRandomNode.execute_one(R = r)
+        except SocketError:
+            print("Try again...")
+            return self.failure(aliveNodes)
+        return ids
+
+    def failurePointed(self, aliveNodes):
+        r = random.randrange(aliveNodes)
+        try:            
+            ids = self.queryRandomPointedNeighbours.stream(R = r)
+        except:
+            print("Try again...")
+            return self.failurePointed(aliveNodes)
+        return ids
+
+    def failurePointing(self, aliveNodes):
+        r = random.randrange(aliveNodes)
+        try:       
+            ids = self.queryRandomPointingNeighbours.stream(R = r)
+        except:
+            print("Try again...")
+            return self.failurePointing(aliveNodes)
+        return ids
+
+    def defineAttackByByBetweeness(self):
         betweenessNode_qt_A = """MATCH (n)
                                 SET n.o = 0;"""
-        betweenessNode_qt_B = """MATCH p = allShortestPaths((source)-->(destination))
+        betweenessNode_qt_B = """MATCH p = shortestPath((source)-[*]->(destination))
                                 WHERE source <> destination and length(nodes(p)) > 2
                                 FOREACH (n in nodes(p) | SET n.o = n.o + 1);"""
         betweenessNode_qt_C = """MATCH (n)
-                                RETURN n.title
+                                RETURN Id(n)
                                 ORDER BY n.o DESC
                                 LIMIT 1;"""
-        self.queryBetweenessA = neo4j.CypherQuery(self.driver.db, betweenessNode_qt_A)
-        self.queryBetweenessB = neo4j.CypherQuery(self.driver.db, betweenessNode_qt_B)
+        queryBetweenessA = neo4j.CypherQuery(self.driver.db, betweenessNode_qt_A)
+        queryBetweenessB = neo4j.CypherQuery(self.driver.db, betweenessNode_qt_B)
         self.queryBetweenessC = neo4j.CypherQuery(self.driver.db, betweenessNode_qt_C)
-'''
+        queryBetweenessA.execute()
+        print("Attack by betweeness defined [1/2]")
+        queryBetweenessB.execute()
+        print("Attack by betweeness defined [2/2]")
+        
+    def attackByBetweeness(self):
+        return self.queryBetweenessC.execute_one()
+    
+    def defineAttackByPageRank(self, alpha = 0.85, it_count = 10, k = 10):
+        pageRank = PageRank()
+        self.orderedView = pageRank.rank(alpha, it_count, k)
+            
+    def attackByPageRank(self, _id = None):
+        (_, _id) = self.orderedView.pop(0)
+        return _id
