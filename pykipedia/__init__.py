@@ -24,7 +24,7 @@ if __name__ == "__main__":
     '''
     driver = Driver()
     eraser = Eraser(driver)
-    eraser.eraseGraph(eraser.attackByDegree)
+    eraser.eraseGraph(eraser.failurePointing)
     '''
     print(str(datetime.now()))
     driver = Driver()

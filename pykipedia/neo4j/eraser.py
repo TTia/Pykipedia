@@ -55,7 +55,12 @@ class Eraser(object):
         if deleteMethod == self.failurePointed or deleteMethod == self.failurePointing:
             ids = deleteMethod(aliveNodes)
             for _id in ids:
-                r = self.queryDeleteNode.execute_one(Id = _id[0])
+                while True:
+                    try:
+                        r = self.queryDeleteNode.execute_one(Id = _id[0])
+                        break
+                    except SocketError:
+                        print("Try again...")
                 deletedNodes += 1
                 deletedRels += r
         elif deleteMethod == self.failure:
@@ -65,7 +70,12 @@ class Eraser(object):
             deletedRels = r
         else:
             _id = deleteMethod()
-            r = self.queryDeleteNode.execute_one(Id = _id)
+            while True:
+                try:
+                    r = self.queryDeleteNode.execute_one(Id = _id)
+                    break
+                except SocketError:
+                    print("Try again...")
             deletedNodes = 1
             deletedRels = r
         return (deletedNodes, deletedRels)
@@ -160,7 +170,7 @@ class Eraser(object):
         r = random.randrange(aliveNodes)
         try:            
             ids = self.queryRandomPointedNeighbours.stream(R = r)
-        except:
+        except SocketError:
             print("Try again...")
             return self.failurePointed(aliveNodes)
         return ids
@@ -169,7 +179,7 @@ class Eraser(object):
         r = random.randrange(aliveNodes)
         try:       
             ids = self.queryRandomPointingNeighbours.stream(R = r)
-        except:
+        except SocketError:
             print("Try again...")
             return self.failurePointing(aliveNodes)
         return ids
@@ -195,7 +205,7 @@ class Eraser(object):
     def attackByBetweeness(self):
         return self.queryBetweenessC.execute_one()
     
-    def defineAttackByPageRank(self, alpha = 0.85, it_count = 10, k = 10):
+    def defineAttackByPageRank(self, alpha = 0.85, it_count = 50, k = 0):
         pageRank = PageRank()
         self.orderedView = pageRank.rank(alpha, it_count, k)
             
