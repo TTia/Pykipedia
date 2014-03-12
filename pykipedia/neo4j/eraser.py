@@ -26,56 +26,44 @@ class Eraser(object):
         self.definePointingAttack()
 
     def eraseGraph(self, deleteMethod, plots = 20):
-        aliveNodes = self.driver.countNodes()
-        aliveRelationships = M = self.driver.countRelationship()
+        self.aliveNodes = self.driver.countNodes()
+        self.aliveRelationships = M = self.driver.countRelationship()
         previousRelsCount = 0
         iPlots = plots
         
         if deleteMethod ==  self.attackByPageRank:
             self.defineAttackByPageRank()
             
-        while aliveNodes > 0 and aliveRelationships > 0:
-            (dn, dr) = self.deleteNode(deleteMethod, aliveNodes)
-            aliveNodes -= dn
-            aliveRelationships -= dr
-            if aliveRelationships <= (M / plots)*iPlots and previousRelsCount != aliveRelationships:
-                efficiency = self.driver.getEfficency(aliveNodes) 
-                self.plot(aliveNodes, efficiency, deleteMethod.__name__)
+        while self.aliveNodes > 0 and self.aliveRelationships > 0:
+            (dn, dr) = self.deleteNode(deleteMethod)
+            self.aliveNodes -= dn
+            self.aliveRelationships -= dr
+            if self.aliveRelationships <= (M / plots)*iPlots and previousRelsCount != self.aliveRelationships:
+                efficiency = self.driver.getEfficency(self.aliveNodes) 
+                #self.plot(self.aliveNodes, efficiency, deleteMethod.__name__)
+                self.plot(self.aliveNodes, efficiency, "pino")
                 iPlots -= 1
-            previousRelsCount = aliveRelationships
-            print("Nodes: "+str(aliveNodes)+" Rels: "+str(aliveRelationships))
-        self.plot(aliveNodes, 0.0, deleteMethod.__name__)
+            previousRelsCount = self.aliveRelationships
+            print("Nodes: "+str(self.aliveNodes)+" Rels: "+str(self.aliveRelationships))
+        self.plot(self.aliveNodes, 0.0, deleteMethod.__name__)
         self.plot(0, 0.0, deleteMethod.__name__)
         
-    def deleteNode(self, deleteMethod, aliveNodes = 0):
+    def deleteNode(self, deleteMethod):
         deletedNodes = 0
         deletedRels = 0
-        if deleteMethod == self.failurePointed or deleteMethod == self.failurePointing:
-            ids = deleteMethod(aliveNodes)
-            for _id in ids:
-                while True:
-                    try:
-                        r = self.queryDeleteNode.execute_one(Id = _id[0])
-                        break
-                    except SocketError:
-                        print("Try again...")
-                deletedNodes += 1
-                deletedRels += r
-        elif deleteMethod == self.failure:
-            _id = deleteMethod(aliveNodes)
-            r = self.queryDeleteNode.execute_one(Id = _id)
-            deletedNodes = 1
-            deletedRels = r
-        else:
-            _id = deleteMethod()
-            while True:
+        ids = deleteMethod()
+        for _id in ids:
+            r = 0
+            k = 3
+            while k>0:
                 try:
                     r = self.queryDeleteNode.execute_one(Id = _id)
                     break
                 except SocketError:
                     print("Try again...")
-            deletedNodes = 1
-            deletedRels = r
+                    k-=1
+            deletedNodes += 1
+            deletedRels += r
         return (deletedNodes, deletedRels)
         
     def plot(self, nodes, efficiency, deleteMethodName):
@@ -112,7 +100,7 @@ class Eraser(object):
         except SocketError:
             print("Try again...")
             return self.attackByDegree()
-        return _id
+        return [_id]
     
     def attackByInDegree(self):
         try:
@@ -120,7 +108,7 @@ class Eraser(object):
         except SocketError:
             print("Try again...")
             return self.attackByInDegree()
-        return _id
+        return [_id]
     
     def attackByOutDegree(self):
         try:
@@ -128,7 +116,7 @@ class Eraser(object):
         except SocketError:
             print("Try again...")
             return self.attackByOutDegree()
-        return _id
+        return [_id]
 
     def definePointingAttack(self):
         randomNode_query_text = """START n=node(*)
@@ -155,37 +143,37 @@ class Eraser(object):
                                     LIMIT 1;"""
         self.queryRandomNode = neo4j.CypherQuery(self.driver.db, randomNode_query_text)
     
-    def failure(self, aliveNodes):
-        r = random.randrange(aliveNodes)
+    def failure(self):
+        r = random.randrange(self.aliveNodes)
         try:
-            ids = self.queryRandomNode.execute_one(R = r)
+            _id = self.queryRandomNode.execute_one(R = r)
         except SocketError:
             print("Try again...")
-            return self.failure(aliveNodes)
-        return ids
+            return self.failure()
+        return [_id]
 
-    def failurePointed(self, aliveNodes):
-        r = random.randrange(aliveNodes)
+    def failurePointed(self):
+        r = random.randrange(self.aliveNodes)
         try:            
             ids = self.queryRandomPointedNeighbours.stream(R = r)
         except SocketError:
             print("Try again...")
-            return self.failurePointed(aliveNodes)
-        return ids
+            return self.failurePointed()
+        return [t[0] for t in ids]
 
-    def failurePointing(self, aliveNodes):
-        r = random.randrange(aliveNodes)
+    def failurePointing(self):
+        r = random.randrange(self.aliveNodes)
         try:       
             ids = self.queryRandomPointingNeighbours.stream(R = r)
         except SocketError:
             print("Try again...")
-            return self.failurePointing(aliveNodes)
-        return ids
+            return self.failurePointing()
+        return [t[0] for t in ids]
     
     def defineAttackByPageRank(self, alpha = 0.85, it_count = 50, k = 0):
         pageRank = PageRank()
         self.orderedView = pageRank.rank(alpha, it_count, k)
             
-    def attackByPageRank(self, _id = None):
+    def attackByPageRank(self):
         (_, _id) = self.orderedView.pop(0)
-        return _id
+        return [_id]

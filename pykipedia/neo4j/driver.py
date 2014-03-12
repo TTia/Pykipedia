@@ -5,6 +5,7 @@ Created on 17/ott/2013
 
 from random import randint
 import unittest
+from py2neo.packages.httpstream import SocketError
 
 from py2neo import neo4j
 
@@ -181,15 +182,37 @@ class Driver:
 		self.queryCreateUniqueEdge.run(LeftUrlValue = startURL, RightUrlValue = endURL)
 	
 	def __runQuery(self, query_text):
-		neo4j.CypherQuery(self.db, query_text).run()
+		k = 3
+		while k>0:
+			try:
+				neo4j.CypherQuery(self.db, query_text).run()
+				return
+			except SocketError:
+				print("Try again...")
+				k-=1
+		raise SocketError(42)
 
 	def __executeOne(self, query_text):	
-		query = neo4j.CypherQuery(self.db, query_text)
-		return query.execute_one()
+		k = 3
+		while k>0:
+			try:
+				query = neo4j.CypherQuery(self.db, query_text)
+				return query.execute_one()
+			except SocketError:
+				print("Try again...")
+				k-=1
+		raise SocketError(42)
 	
 	def __iterateOverResult(self, query_text):		
-		query = neo4j.CypherQuery(self.db, query_text)
-		return query.stream()
+		k = 3
+		while k>0:
+			try:
+				query = neo4j.CypherQuery(self.db, query_text)
+				return query.stream()
+			except SocketError:
+				print("Try again...")
+				k-=1
+		raise SocketError(42)
 		
 	def countNodes(self):
 		'''

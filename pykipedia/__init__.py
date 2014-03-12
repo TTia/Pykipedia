@@ -5,14 +5,14 @@ from pykipedia.neo4j.driver import Driver
 from pykipedia.neo4j.eraser import Eraser
 from pykipedia.neo4j.pageRank import PageRank
 
-if __name__ == "__main__":  
+if __name__ == "__main__":
     '''
     pageRank = PageRank()
     pageRank.rank()
     '''
     '''
     start = str(datetime.now())
-    c = Crawler(steps = 32)
+    c = Crawler(steps = 3)
     c.startCrawler()
     end = str(datetime.now())
     print("Visit start: {0}\nVisit end: {1}\nEdges: {2}".format(start, end, c.numEdges))
