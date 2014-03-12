@@ -31,8 +31,6 @@ class Eraser(object):
         previousRelsCount = 0
         iPlots = plots
         
-        if deleteMethod == self.attackByBetweeness:
-            self.defineAttackByByBetweeness()
         if deleteMethod ==  self.attackByPageRank:
             self.defineAttackByPageRank()
             
@@ -183,27 +181,6 @@ class Eraser(object):
             print("Try again...")
             return self.failurePointing(aliveNodes)
         return ids
-
-    def defineAttackByByBetweeness(self):
-        betweenessNode_qt_A = """MATCH (n)
-                                SET n.o = 0;"""
-        betweenessNode_qt_B = """MATCH p = shortestPath((source)-[*]->(destination))
-                                WHERE source <> destination and length(nodes(p)) > 2
-                                FOREACH (n in nodes(p) | SET n.o = n.o + 1);"""
-        betweenessNode_qt_C = """MATCH (n)
-                                RETURN Id(n)
-                                ORDER BY n.o DESC
-                                LIMIT 1;"""
-        queryBetweenessA = neo4j.CypherQuery(self.driver.db, betweenessNode_qt_A)
-        queryBetweenessB = neo4j.CypherQuery(self.driver.db, betweenessNode_qt_B)
-        self.queryBetweenessC = neo4j.CypherQuery(self.driver.db, betweenessNode_qt_C)
-        queryBetweenessA.execute()
-        print("Attack by betweeness defined [1/2]")
-        queryBetweenessB.execute()
-        print("Attack by betweeness defined [2/2]")
-        
-    def attackByBetweeness(self):
-        return self.queryBetweenessC.execute_one()
     
     def defineAttackByPageRank(self, alpha = 0.85, it_count = 50, k = 0):
         pageRank = PageRank()

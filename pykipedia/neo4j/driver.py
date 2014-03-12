@@ -268,7 +268,6 @@ class Driver:
 		result = 0.0
 		for i in D:
 			for j in D[i]:
-				#print("({0})-[*]->({1}): d={2}".format(i,j,D[i][j]))
 				result += 1.0/j
 		factor = 1.0/(N*(N-1))
 		result = factor * result
