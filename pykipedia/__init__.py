@@ -6,10 +6,8 @@ from pykipedia.neo4j.eraser import Eraser
 from pykipedia.neo4j.pageRank import PageRank
 
 if __name__ == "__main__":
-    '''
     pageRank = PageRank()
-    pageRank.rank()
-    '''
+    pageRank.rank(k = 10)
     '''
     start = str(datetime.now())
     c = Crawler(steps = 3)
@@ -22,9 +20,11 @@ if __name__ == "__main__":
     gen = GexfGenerator()
     gen.generateGexfFile(driver)
     '''
+    '''
     driver = Driver()
     eraser = Eraser(driver)
     eraser.eraseGraph(eraser.failurePointing)
+    '''
     '''
     print(str(datetime.now()))
     driver = Driver()
